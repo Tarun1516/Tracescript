@@ -1,0 +1,5 @@
+# Expected to fail semantic analysis: duplicate table name
+source pcap "x.pcap"
+table t { a: string }
+table t { b: int }
+on e(x) { insert t("hello") }

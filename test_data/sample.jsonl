@@ -1,0 +1,3 @@
+{"time": "2024-01-01T00:00:00Z", "user": "alice", "action": "login"}
+{"time": "2024-01-01T00:00:05Z", "user": "bob", "action": "logout"}
+{"time": "2024-01-01T00:00:10Z", "user": "alice", "action": "file_read", "path": "/etc/passwd"}

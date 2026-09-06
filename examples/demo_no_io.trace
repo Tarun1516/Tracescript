@@ -1,0 +1,25 @@
+# TraceScript demo without packet input.
+#
+# Useful for testing the interpreter and table engine in isolation.
+
+table counters {
+    label: string,
+    value: int
+}
+
+function double(n) {
+    return n * 2
+}
+
+on tick(event) {
+    let label = event.label
+    let n = event.value
+    insert counters(label, double(n))
+    if n > 5 {
+        alert("large value", label, to_string(double(n)))
+    }
+}
+
+after finish {
+    show counters
+}

@@ -1,0 +1,23 @@
+[package]
+name = "tracescript"
+version = "0.1.0"
+edition = "2021"
+description = "TraceScript - an event-driven forensic scripting language for network traffic analysis"
+license = "MIT"
+
+[dependencies]
+anyhow = "1"
+thiserror = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+csv = "1"
+comfy-table = "7"
+pcap-file = "1"
+clap = { version = "4", features = ["derive"] }
+
+[profile.dev]
+opt-level = 0
+
+[profile.release]
+opt-level = 3
+lto = "thin"

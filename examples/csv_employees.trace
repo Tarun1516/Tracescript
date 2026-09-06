@@ -1,0 +1,12 @@
+source csv "test_data/employees.csv"
+
+table employees { name: string, role: string, department: string }
+
+on log_entry(event) {
+    insert employees(event.name, event.role, event.department)
+}
+
+after finish {
+    show employees
+    export employees to "out_employees.csv"
+}

@@ -1,0 +1,15 @@
+source jsonl "test_data/sample.jsonl"
+
+table audit { user: string, action: string }
+
+on log_entry(event) {
+    insert audit(event.user, event.action)
+    if event.action == "file_read" {
+        alert("Sensitive file read", event.user, event.path)
+    }
+}
+
+after finish {
+    show audit
+    export audit to "out_audit.csv"
+}

@@ -1,0 +1,58 @@
+# TraceScript mixed-protocol example.
+#
+# Demonstrates the event types the runtime can emit:
+#   - `packet`       for every IPv4 frame
+#   - `tcp_connection` for every TCP segment (incl. SYN)
+#   - `dns_query`    for queries seen on UDP/53 or TCP/53
+#   - `http_request` for ASCII HTTP requests to TCP/80 or TCP/8080
+#   - `log_entry`    when reading a CSV / JSONL source
+#
+# Run with:
+#   tracescript run examples/mixed_protocols.trace \
+#       --pcap test_data/mixed.pcap
+
+source pcap "test_data/mixed.pcap"
+
+table tcp_summary {
+    time:   string,
+    src_ip: string,
+    sport:  int,
+    dport:  int,
+    flags:  string
+}
+
+table http_summary {
+    time:   string,
+    method: string,
+    uri:    string,
+    host:   string,
+    agent:  string
+}
+
+table dns_summary {
+    time:  string,
+    query: string,
+    qtype: string
+}
+
+on tcp_connection(event) {
+    insert tcp_summary(event.time, event.src_ip, event.src_port, event.dst_port, event.flags)
+    if event.flags == "S" {
+        alert("SYN observed", event.src_ip, "->", event.dst_port)
+    }
+}
+
+on http_request(event) {
+    insert http_summary(event.time, event.method, event.uri, event.host, event.user_agent)
+    alert("HTTP request", event.method, event.host, event.uri)
+}
+
+on dns_query(event) {
+    insert dns_summary(event.time, event.query, event.qtype)
+}
+
+after finish {
+    show tcp_summary
+    show http_summary
+    show dns_summary
+}

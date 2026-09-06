@@ -1,0 +1,57 @@
+# TraceScript demo: DNS forensic analysis.
+#
+# This script reads a packet capture, extracts DNS queries, stores them in a
+# structured table, fires alerts on suspicious patterns, and exports the result
+# to disk. Run with:
+#
+#   tracescript run examples/dns_forensic.trace --pcap test_data/lab_capture.pcap
+#
+# All operations are passive — only packet captures produced by the analyst in an
+# isolated lab should be processed.
+
+source pcap "test_data/lab_capture.pcap"
+
+table dns_events {
+    time:    string,
+    src_ip:  string,
+    dst_ip:  string,
+    query:   string,
+    qtype:   string,
+    length:  int
+}
+
+# Heuristic: a domain is "suspicious" if it uses a low-trust TLD or is implausibly long.
+function is_suspicious(domain) {
+    if ends_with(domain, ".xyz") {
+        return true
+    }
+    if ends_with(domain, ".invalid") {
+        return true
+    }
+    if len(domain) > 40 {
+        return true
+    }
+    return false
+}
+
+on dns_query(event) {
+    let q = event.query
+    let l = len(q)
+    insert dns_events(
+        event.time,
+        event.src_ip,
+        event.dst_ip,
+        q,
+        event.qtype,
+        l
+    )
+    if is_suspicious(q) {
+        alert("Suspicious DNS query", event.src_ip, "->", q, "len=" + to_string(l))
+    }
+}
+
+after finish {
+    show dns_events
+    export dns_events to "out_dns_events.csv"
+    export dns_events to "out_dns_events.json"
+}

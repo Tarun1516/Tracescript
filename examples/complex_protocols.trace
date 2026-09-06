@@ -1,0 +1,59 @@
+# TraceScript example that exercises every supported protocol and event type
+# against a synthesised multi-protocol capture. Run with:
+#
+#   tracescript run examples/complex_protocols.trace \
+#       --pcap test_data/complex.pcap
+#
+# The capture contains: DNS-over-UDP, DNS-over-TCP, HTTP, TLS-style TCP SYN,
+# ICMP, and an ARP frame that the runtime correctly ignores.
+
+source pcap "test_data/complex.pcap"
+
+table events {
+    kind:  string,
+    proto: string,
+    src:   string,
+    dst:   string,
+    sport: int,
+    dport: int
+}
+
+on packet(event) {
+    insert events("packet", event.protocol, event.src_ip, event.dst_ip, 0, 0)
+}
+
+on dns_query(event) {
+    insert events("dns_query", "udp", event.src_ip, event.dst_ip, event.src_port, event.dst_port)
+    if ends_with(event.query, ".xyz") or ends_with(event.query, ".invalid") {
+        alert("Suspicious DNS TLD", event.query, "from", event.src_ip)
+    }
+}
+
+on dns_response(event) {
+    insert events("dns_response", "udp", event.src_ip, event.dst_ip, 0, 0)
+}
+
+on tcp_connection(event) {
+    insert events("tcp_connection", "tcp", event.src_ip, event.dst_ip, event.src_port, event.dst_port)
+    if event.flags == "S" and event.dst_port == 443 {
+        alert("TLS ClientHello attempt", event.src_ip, "->", event.dst_port)
+    }
+}
+
+on http_request(event) {
+    insert events("http_request", "tcp", event.src_ip, event.dst_ip, event.src_port, event.dst_port)
+    let uri = event.uri
+    if uri contains "/api/v1/users" {
+        alert("Sensitive endpoint hit", event.method, event.host, event.uri, "agent=", event.user_agent)
+    }
+}
+
+after finish {
+    print "summary by kind:"
+    let total = 0
+    for row in events {
+        let total = total + 1
+    }
+    print total
+    show events
+}

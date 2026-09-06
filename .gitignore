@@ -1,0 +1,22 @@
+# Rust build artefacts
+/target/
+/Cargo.lock.bak
+
+# Compiled TraceScript bytecode — reproducible from sources
+/*.traceb
+
+# Sample outputs left over from `cargo run` demos (regenerable)
+/out_*.csv
+/out_*.json
+/alerts.jsonl
+/extracted.pcap
+
+# OS / editor noise
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/
+
+# Local cargo metadata (not the lockfile)
+/.cargo/
